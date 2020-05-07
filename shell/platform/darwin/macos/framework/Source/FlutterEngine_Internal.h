@@ -16,12 +16,6 @@
 @property(nonatomic, readonly) BOOL running;
 
 /**
- * The resource context used by the engine for texture uploads. FlutterViews associated with this
- * engine should be created to share with this context.
- */
-@property(nonatomic, readonly, nullable) NSOpenGLContext* resourceContext;
-
-/**
  * Informs the engine that the associated view controller's view size has changed.
  */
 - (void)updateWindowMetrics;

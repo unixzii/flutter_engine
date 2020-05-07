@@ -116,6 +116,9 @@ static bool IsRendererValid(const FlutterRendererConfig* config) {
   switch (config->type) {
     case kOpenGL:
       return IsOpenGLRendererConfigValid(config);
+    case kMetal:
+      // TODO(cyandev): Add verifing process.
+      return true;
     case kSoftware:
       return IsSoftwareRendererConfigValid(config);
     default:
@@ -238,6 +241,29 @@ InferOpenGLPlatformViewCreationCallback(
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
+InferMetalPlatformViewCreationCallback(
+    const FlutterRendererConfig* config,
+    void* user_data,
+    flutter::PlatformViewEmbedder::PlatformDispatchTable
+        platform_dispatch_table,
+    std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
+        external_view_embedder) {
+  if (config->type == kMetal) {
+    void* metal_layer = config->metal.metal_layer;
+    return fml::MakeCopyable(
+    [metal_layer, platform_dispatch_table](flutter::Shell& shell) mutable {
+      return std::make_unique<flutter::PlatformViewEmbedder>(
+          shell,                    // delegate
+          shell.GetTaskRunners(),   // task runners
+          metal_layer,              // Metal layer
+          platform_dispatch_table   // embedder platform dispatch table
+      );
+    });
+  }
+  return nullptr;
+}
+
+static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferSoftwarePlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
@@ -289,6 +315,10 @@ InferPlatformViewCreationCallback(
   switch (config->type) {
     case kOpenGL:
       return InferOpenGLPlatformViewCreationCallback(
+          config, user_data, platform_dispatch_table,
+          std::move(external_view_embedder));
+    case kMetal:
+      return InferMetalPlatformViewCreationCallback(
           config, user_data, platform_dispatch_table,
           std::move(external_view_embedder));
     case kSoftware:

@@ -113,7 +113,9 @@ GrContext* GPUSurfaceMetal::GetContext() {
 
 // |Surface|
 flutter::ExternalViewEmbedder* GPUSurfaceMetal::GetExternalViewEmbedder() {
-  return delegate_->GetExternalViewEmbedder();
+  if (delegate_)
+    return delegate_->GetExternalViewEmbedder();
+  return nullptr;
 }
 
 // |Surface|

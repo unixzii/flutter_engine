@@ -38,6 +38,7 @@ typedef enum {
 
 typedef enum {
   kOpenGL,
+  kMetal,
   kSoftware,
 } FlutterRendererType;
 
@@ -312,6 +313,10 @@ typedef struct {
 } FlutterOpenGLRendererConfig;
 
 typedef struct {
+  void* metal_layer;
+} FlutterMetalRendererConfig;
+
+typedef struct {
   /// The size of this struct. Must be sizeof(FlutterSoftwareRendererConfig).
   size_t struct_size;
   /// The callback presented to the embedder to present a fully populated buffer
@@ -325,6 +330,7 @@ typedef struct {
   FlutterRendererType type;
   union {
     FlutterOpenGLRendererConfig open_gl;
+    FlutterMetalRendererConfig metal;
     FlutterSoftwareRendererConfig software;
   };
 } FlutterRendererConfig;

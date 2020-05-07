@@ -23,6 +23,15 @@ PlatformViewEmbedder::PlatformViewEmbedder(
 PlatformViewEmbedder::PlatformViewEmbedder(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
+    void* metal_layer,
+    PlatformDispatchTable platform_dispatch_table)
+    : PlatformView(delegate, std::move(task_runners)),
+      embedder_surface_(std::make_unique<EmbedderSurfaceMetal>(metal_layer)),
+      platform_dispatch_table_(platform_dispatch_table) {}
+
+PlatformViewEmbedder::PlatformViewEmbedder(
+    PlatformView::Delegate& delegate,
+    flutter::TaskRunners task_runners,
     EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
     PlatformDispatchTable platform_dispatch_table,
     std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder)

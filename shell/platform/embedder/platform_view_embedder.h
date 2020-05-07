@@ -12,6 +12,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 #include "flutter/shell/platform/embedder/embedder_surface_gl.h"
+#include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "flutter/shell/platform/embedder/embedder_surface_software.h"
 #include "flutter/shell/platform/embedder/vsync_waiter_embedder.h"
 
@@ -43,6 +44,13 @@ class PlatformViewEmbedder final : public PlatformView {
       bool fbo_reset_after_present,
       PlatformDispatchTable platform_dispatch_table,
       std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+    
+  // Creates a platform view that sets up an Metal rasterizer.
+  PlatformViewEmbedder(
+      PlatformView::Delegate& delegate,
+      flutter::TaskRunners task_runners,
+      void* metal_layer,  // TODO(cyandev): Wrap the raw pointer with a type?
+      PlatformDispatchTable platform_dispatch_table);
 
   // Create a platform view that sets up a software rasterizer.
   PlatformViewEmbedder(

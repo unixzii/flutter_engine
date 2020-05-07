@@ -11,7 +11,7 @@ shell_gpu_configuration("embedder_gpu_configuration") {
   enable_software = true
   enable_vulkan = false
   enable_gl = true
-  enable_metal = false
+  enable_metal = is_mac
 }
 
 _framework_binary_subpath = "Versions/A/FlutterEmbedder"
@@ -59,6 +59,15 @@ template("embedder_source_set") {
       "vsync_waiter_embedder.cc",
       "vsync_waiter_embedder.h",
     ]
+
+    # TODO(cyandev): This is not good, maybe we can introduce more configurations
+    # and move this to the platform-specific module.
+    if (is_mac) {
+      sources += [
+        "embedder_surface_metal.mm",
+        "embedder_surface_metal.h",
+      ]
+    }
 
     deps = [
       ":embedder_gpu_configuration",

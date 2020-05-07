@@ -4,25 +4,37 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
+@interface FlutterView () <MTKViewDelegate>
+@end
+
 @implementation FlutterView {
   __weak id<FlutterViewReshapeListener> _reshapeListener;
 }
 
-- (instancetype)initWithShareContext:(NSOpenGLContext*)shareContext
-                     reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
-  return [self initWithFrame:NSZeroRect shareContext:shareContext reshapeListener:reshapeListener];
+static void CommonInit(FlutterView* view) {
+  view.paused = YES;
+  view.delegate = view;
 }
 
 - (instancetype)initWithFrame:(NSRect)frame
-                 shareContext:(NSOpenGLContext*)shareContext
               reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
-  self = [super initWithFrame:frame];
+  self = [super initWithFrame:frame device:MTLCreateSystemDefaultDevice()];
   if (self) {
-    self.openGLContext = [[NSOpenGLContext alloc] initWithFormat:shareContext.pixelFormat
-                                                    shareContext:shareContext];
     _reshapeListener = reshapeListener;
-    self.wantsBestResolutionOpenGLSurface = YES;
+    CommonInit(self);
   }
+  return self;
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+  self = [super initWithCoder:coder];
+  CommonInit(self);
+  return self;
+}
+
+- (instancetype)initWithFrame:(NSRect)frame device:(id<MTLDevice>)device {
+  self = [super initWithFrame:frame device:device];
+  CommonInit(self);
   return self;
 }
 
@@ -39,18 +51,16 @@
   return YES;
 }
 
-- (void)reshape {
-  [super reshape];
+- (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
   [_reshapeListener viewDidReshape:self];
+}
+
+- (void)drawInMTKView:(MTKView *)view {
+  // Do nothing but wait for the content to be drawn...
 }
 
 - (BOOL)acceptsFirstResponder {
   return YES;
-}
-
-- (void)viewDidChangeBackingProperties {
-  [super viewDidChangeBackingProperties];
-  [_reshapeListener viewDidReshape:self];
 }
 
 @end

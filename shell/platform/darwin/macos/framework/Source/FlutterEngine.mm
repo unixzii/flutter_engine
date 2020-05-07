@@ -106,37 +106,8 @@
 // Callbacks provided to the engine. See the called methods for documentation.
 #pragma mark - Static methods provided to engine configuration
 
-static bool OnMakeCurrent(FlutterEngine* engine) {
-  return [engine engineCallbackOnMakeCurrent];
-}
-
-static bool OnClearCurrent(FlutterEngine* engine) {
-  return [engine engineCallbackOnClearCurrent];
-}
-
-static bool OnPresent(FlutterEngine* engine) {
-  return [engine engineCallbackOnPresent];
-}
-
-static uint32_t OnFBO(FlutterEngine* engine) {
-  // There is currently no case where a different FBO is used, so no need to forward.
-  return 0;
-}
-
-static bool OnMakeResourceCurrent(FlutterEngine* engine) {
-  return [engine engineCallbackOnMakeResourceCurrent];
-}
-
 static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngine* engine) {
   [engine engineCallbackOnPlatformMessage:message];
-}
-
-static bool OnAcquireExternalTexture(FlutterEngine* engine,
-                                     int64_t texture_identifier,
-                                     size_t width,
-                                     size_t height,
-                                     FlutterOpenGLTexture* open_gl_texture) {
-  return [engine populateTextureWithIdentifier:texture_identifier openGLTexture:open_gl_texture];
 }
 
 #pragma mark -
@@ -148,12 +119,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   // The project being run by this engine.
   FlutterDartProject* _project;
 
-  // The context provided to the Flutter engine for resource loading.
-  NSOpenGLContext* _resourceContext;
-
-  // The context that is owned by the currently displayed FlutterView. This is stashed in the engine
-  // so that the view doesn't need to be accessed from a background thread.
-  NSOpenGLContext* _mainOpenGLContext;
+  // The Metal-backed layer of the currently displayed FlutterView.
+  CAMetalLayer* _metalLayer;
 
   // A mapping of channel names to the registered handlers for those channels.
   NSMutableDictionary<NSString*, FlutterBinaryMessageHandler>* _messageHandlers;
@@ -198,14 +165,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   }
 
   const FlutterRendererConfig rendererConfig = {
-      .type = kOpenGL,
-      .open_gl.struct_size = sizeof(FlutterOpenGLRendererConfig),
-      .open_gl.make_current = (BoolCallback)OnMakeCurrent,
-      .open_gl.clear_current = (BoolCallback)OnClearCurrent,
-      .open_gl.present = (BoolCallback)OnPresent,
-      .open_gl.fbo_callback = (UIntCallback)OnFBO,
-      .open_gl.make_resource_current = (BoolCallback)OnMakeResourceCurrent,
-      .open_gl.gl_external_texture_frame_callback = (TextureFrameCallback)OnAcquireExternalTexture,
+      .type = kMetal,
+      .metal.metal_layer = (__bridge void*) _metalLayer,
   };
 
   // TODO(stuartmorgan): Move internal channel registration from FlutterViewController to here.
@@ -259,10 +220,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (void)setViewController:(FlutterViewController*)controller {
   _viewController = controller;
-  _mainOpenGLContext = controller.flutterView.openGLContext;
+  _metalLayer = (CAMetalLayer*) controller.flutterView.layer;
   if (!controller && !_allowHeadlessExecution) {
     [self shutDownEngine];
-    _resourceContext = nil;
   }
   [self updateWindowMetrics];
 }
@@ -277,17 +237,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (BOOL)running {
   return _engine != nullptr;
-}
-
-- (NSOpenGLContext*)resourceContext {
-  if (!_resourceContext) {
-    NSOpenGLPixelFormatAttribute attributes[] = {
-        NSOpenGLPFAColorSize, 24, NSOpenGLPFAAlphaSize, 8, NSOpenGLPFADoubleBuffer, 0,
-    };
-    NSOpenGLPixelFormat* pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-    _resourceContext = [[NSOpenGLContext alloc] initWithFormat:pixelFormat shareContext:nil];
-  }
-  return _resourceContext;
 }
 
 - (void)updateWindowMetrics {
@@ -314,27 +263,22 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 #pragma mark - Private methods
 
 - (bool)engineCallbackOnMakeCurrent {
-  if (!_mainOpenGLContext) {
-    return false;
-  }
-  [_mainOpenGLContext makeCurrentContext];
+  // TODO(cyandev): Remove for Metal.
   return true;
 }
 
 - (bool)engineCallbackOnClearCurrent {
-  [NSOpenGLContext clearCurrentContext];
+  // TODO(cyandev): Remove for Metal.
   return true;
 }
 
 - (bool)engineCallbackOnPresent {
-  if (!_mainOpenGLContext) {
-  }
-  [_mainOpenGLContext flushBuffer];
+  // TODO(cyandev): Remove for Metal.
   return true;
 }
 
 - (bool)engineCallbackOnMakeResourceCurrent {
-  [self.resourceContext makeCurrentContext];
+  // TODO(cyandev): Remove for Metal.
   return true;
 }
 
